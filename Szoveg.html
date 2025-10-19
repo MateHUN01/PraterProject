@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Betűnként megjelenő középre igazított szöveg</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --accent:#60a5fa;
+      --text:#e6eef8;
+      --font-sz: clamp(20px, 4vw, 48px);
+    }
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+    body{background:linear-gradient(180deg,var(--bg), #071025);color:var(--text);display:flex;align-items:center;justify-content:center;}
+
+    .display-wrap{pointer-events:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+    .line{
+      font-size:var(--font-sz);font-weight:600;line-height:1.05;white-space:pre-wrap;text-align:center;max-width:90%;
+      display:inline-block;letter-spacing:0.2px;
+    }
+    .char{opacity:0;display:inline-block;transform:translateY(8px);transition:opacity 240ms ease, transform 260ms cubic-bezier(.2,.9,.3,1)}
+    .char.visible{opacity:1;transform:translateY(0)}
+  </style>
+</head>
+<body>
+  <div class="display-wrap">
+    <div id="display" class="line" aria-live="polite"></div>
+  </div>
+
+  <script>
+    // Itt tudod megadni a megjelenítendő szövegeket
+    const lines = [
+        "Megyünk Práterbe?", "Megyüüüüüüüüüünk!"
+    ];
+
+    const display = document.getElementById('display');
+    let isPlaying = false;
+    let currentTimerIds = [];
+    let currentIndex = 0;
+
+    function clearTimers(){ currentTimerIds.forEach(id=>clearTimeout(id)); currentTimerIds=[]; }
+
+    function showLine(text, cb){
+      clearTimers(); display.innerHTML='';
+      const chars = Array.from(text);
+      chars.forEach((ch)=>{
+        const sp = document.createElement('span');
+        sp.className='char';
+        sp.textContent = ch === ' ' ? '\u00A0' : ch;
+        display.appendChild(sp);
+      });
+
+      const perChar = 60; // sebesség (ms/karakter)
+      const initialDelay = 100;
+
+      Array.from(display.children).forEach((el, idx)=>{
+        const delay = initialDelay + idx * perChar;
+        const id = setTimeout(()=>{ el.classList.add('visible'); }, delay);
+        currentTimerIds.push(id);
+      });
+
+      const total = initialDelay + chars.length * perChar + 500;
+      const endId = setTimeout(()=>{ if(cb) cb(); }, total);
+      currentTimerIds.push(endId);
+    }
+
+    function playSequence(){
+      if(!isPlaying) return;
+      if(currentIndex >= lines.length){
+        isPlaying=false;
+        // Miután az összes szöveg lement, betölti a Nevek.html fájlt
+        setTimeout(()=>{ window.location.href = 'Nevek.html'; }, 1000);
+        return;
+      }
+      const text = lines[currentIndex];
+      showLine(text, ()=>{
+        setTimeout(()=>{ currentIndex++; playSequence(); }, 700);
+      });
+    }
+
+    function start(){
+      if(isPlaying) return;
+      isPlaying = true;
+      currentIndex = 0;
+      playSequence();
+    }
+
+    start(); // automatikusan indul
+  </script>
+</body>
+</html>
